@@ -49,6 +49,22 @@ public class MainViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(Points));
     }
 
+    public void MovePoint(Point point, double x, double y)
+    {
+        if (point == null) return;
+        if (System.Math.Abs(point.X - x) < 0.0001 && System.Math.Abs(point.Y - y) < 0.0001) return;
+        point.X = x;
+        point.Y = y;
+    }
+
+    public void RemovePoint(Point point)
+    {
+        if (point == null) return;
+        _model.Remove(point);
+        if (Selected == point) Selected = null;
+        OnPropertyChanged(nameof(Points));
+    }
+
     public void RemoveSelected()
     {
         if (Selected is null) return;

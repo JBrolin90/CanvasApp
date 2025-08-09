@@ -1,9 +1,12 @@
+using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Controls.Shapes;
 using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Interactivity;
 using Sweeper.ViewModels;
 
 namespace avalonia.app;
@@ -11,6 +14,12 @@ namespace avalonia.app;
 public partial class MainWindow : Window
 {
     private readonly MainViewModel _vm;
+    private Sweeper.Math.Point? _dragPoint;
+    private Ellipse? _dragVisual;
+    private Avalonia.Point _dragOffset; // offset inside the ellipse when grabbing
+    private readonly Dictionary<Sweeper.Math.Point, Ellipse> _pointVisuals = new();
+    private readonly Canvas _canvas;
+    private IPointer? _capturedPointer;
 
     public MainWindow()
     {
@@ -18,7 +27,7 @@ public partial class MainWindow : Window
         _vm = new MainViewModel();
         DataContext = _vm;
 
-        var canvas = new Canvas
+    _canvas = new Canvas
         {
             Background = Brushes.Transparent // Needed so empty areas receive pointer events
         };
@@ -38,30 +47,47 @@ public partial class MainWindow : Window
 
         void updateInfo() => info.Text = $"Points: {_vm.Points.Count}";
         updateInfo();
-        _vm.Points.CollectionChanged += (_, _) => updateInfo();
+    _vm.Points.CollectionChanged += (_, _) => updateInfo();
 
         // Center both blocks.
-        Opened += (_, _) => { CenterText(canvas, title); PositionInfo(canvas, info, title); };
-        SizeChanged += (_, _) => { CenterText(canvas, title); PositionInfo(canvas, info, title); };
+        Opened += (_, _) => { CenterText(_canvas, title); PositionInfo(_canvas, info, title); };
+        SizeChanged += (_, _) => { CenterText(_canvas, title); PositionInfo(_canvas, info, title); };
 
-        canvas.Children.Add(title);
-        canvas.Children.Add(info);
+    _canvas.Children.Add(title);
+    _canvas.Children.Add(info);
 
-        // Pointer: click to add point.
-        canvas.PointerPressed += (s, e) =>
+        // Pointer: click to add point if not on existing; start drag if on existing.
+        _canvas.PointerPressed += (s, e) =>
         {
-            if (e.GetCurrentPoint(canvas).Properties.IsLeftButtonPressed)
-            {
-                var p = e.GetPosition(canvas);
-                _vm.AddPoint(p.X, p.Y);
-                RenderPoints(canvas);
-            }
+            if (e.Source is Ellipse) return; // Ellipse handles its own press
+            if (!e.GetCurrentPoint(_canvas).Properties.IsLeftButtonPressed) return;
+            var pt = e.GetPosition(_canvas);
+            _vm.AddPoint(pt.X, pt.Y);
         };
 
-        // Re-render points on collection change.
-        _vm.Points.CollectionChanged += (_, _) => RenderPoints(canvas);
-        RenderPoints(canvas);
-        Content = canvas;
+        // Canvas-level move & release to ensure we keep receiving events even if pointer leaves ellipse.
+        // Fallback canvas-level handlers (handledEventsToo) in case pointer leaves ellipse without capture.
+    _canvas.AddHandler(PointerMovedEvent, (object? _, PointerEventArgs e) =>
+        {
+            if (_dragPoint is null || _dragVisual is null) return;
+            if (_capturedPointer != null && e.Pointer != _capturedPointer) return;
+            var props = e.GetCurrentPoint(_canvas).Properties;
+            if (!props.IsLeftButtonPressed) { EndDrag(); return; }
+            var pt = e.GetPosition(_canvas);
+            UpdateDragPosition(pt);
+    }, RoutingStrategies.Tunnel | RoutingStrategies.Bubble, true);
+
+    _canvas.AddHandler(PointerReleasedEvent, (object? _, PointerReleasedEventArgs e) =>
+        {
+            if (_capturedPointer != null && e.Pointer == _capturedPointer)
+                EndDrag();
+    }, RoutingStrategies.Tunnel | RoutingStrategies.Bubble, true);
+
+    // Incremental visuals: hook collection changed.
+    _vm.Points.CollectionChanged += OnPointsCollectionChanged;
+    // Seed existing points.
+    foreach (var p in _vm.Points) AddPointVisual(p, _canvas);
+        Content = _canvas;
     }
 
     private static void CenterText(Canvas canvas, TextBlock text)
@@ -83,27 +109,125 @@ public partial class MainWindow : Window
         Canvas.SetTop(info, (canvas.Bounds.Height - titleSize.Height) / 2 + titleSize.Height + 8);
     }
 
-    private void RenderPoints(Canvas canvas)
+    private void OnPointsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
-        // Remove existing point visuals (tagged by Tag == "pt")
-        var old = canvas.Children.OfType<Ellipse>().Where(e => Equals(e.Tag, "pt")).ToList();
-        foreach (var o in old) canvas.Children.Remove(o);
+        if (Content is not Canvas canvas) return;
+        if (e.NewItems != null)
+            foreach (Sweeper.Math.Point p in e.NewItems)
+                AddPointVisual(p, canvas);
+        if (e.OldItems != null)
+            foreach (Sweeper.Math.Point p in e.OldItems)
+                RemovePointVisual(p, canvas);
+    }
 
-        foreach (var p in _vm.Points)
+    private void AddPointVisual(Sweeper.Math.Point p, Canvas canvas)
+    {
+        if (_pointVisuals.ContainsKey(p)) return;
+    var dot = new Ellipse
         {
-            var dot = new Ellipse
-            {
-                Width = 10,
-                Height = 10,
-                Fill = Brushes.OrangeRed,
-                Stroke = Brushes.Black,
-                StrokeThickness = 1,
-                Tag = "pt"
-            };
-            ToolTip.SetTip(dot, $"({p.X:0.##}, {p.Y:0.##})");
-            Canvas.SetLeft(dot, p.X - dot.Width / 2);
-            Canvas.SetTop(dot, p.Y - dot.Height / 2);
-            canvas.Children.Add(dot);
+            Width = 10,
+            Height = 10,
+            Fill = Brushes.OrangeRed,
+            Stroke = Brushes.Black,
+            StrokeThickness = 1,
+            Tag = p
+        };
+        PositionDot(dot, p);
+        ToolTip.SetTip(dot, $"({p.X:0.##}, {p.Y:0.##})");
+        canvas.Children.Add(dot);
+        _pointVisuals[p] = dot;
+        p.PropertyChanged += Point_PropertyChanged;
+    dot.PointerPressed += (s, e) => OnPointPressed(p, dot, e);
+    dot.PointerMoved += (s, e) => OnPointMoved(p, dot, e);
+    dot.PointerReleased += (s, e) => OnPointReleased(p, dot, e);
+    }
+
+    private void RemovePointVisual(Sweeper.Math.Point p, Canvas canvas)
+    {
+        if (_pointVisuals.TryGetValue(p, out var dot))
+        {
+            canvas.Children.Remove(dot);
+            _pointVisuals.Remove(p);
+            p.PropertyChanged -= Point_PropertyChanged;
         }
+    }
+
+    private void Point_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (sender is not Sweeper.Math.Point p) return;
+        if (!_pointVisuals.TryGetValue(p, out var dot)) return;
+        if (e.PropertyName is nameof(Sweeper.Math.Point.X) or nameof(Sweeper.Math.Point.Y))
+        {
+            PositionDot(dot, p);
+            ToolTip.SetTip(dot, $"({p.X:0.##}, {p.Y:0.##})");
+        }
+    }
+
+    private static void PositionDot(Ellipse dot, Sweeper.Math.Point p)
+    {
+        Canvas.SetLeft(dot, p.X - dot.Width / 2);
+        Canvas.SetTop(dot, p.Y - dot.Height / 2);
+    }
+
+    private void OnPointPressed(Sweeper.Math.Point model, Ellipse visual, PointerPressedEventArgs e)
+    {
+        if (!e.GetCurrentPoint(visual).Properties.IsLeftButtonPressed) return;
+        _dragPoint = model;
+        _dragVisual = visual;
+        var pt = e.GetPosition(_canvas);
+        _dragOffset = new Avalonia.Point(pt.X - model.X, pt.Y - model.Y);
+        visual.Stroke = Brushes.Yellow;
+        visual.StrokeThickness = 2;
+    // Capture pointer to the visual so it continues receiving move events.
+    e.Pointer.Capture(visual);
+    _capturedPointer = e.Pointer;
+        e.Handled = true;
+    }
+
+    private void OnPointMoved(Sweeper.Math.Point model, Ellipse visual, PointerEventArgs e)
+    {
+        if (_dragPoint != model || _dragVisual != visual) return;
+        if (!e.GetCurrentPoint(_canvas).Properties.IsLeftButtonPressed)
+        {
+            EndDrag();
+            return;
+        }
+        var pt = e.GetPosition(_canvas);
+    UpdateDragPosition(pt);
+    }
+
+    private void OnPointReleased(Sweeper.Math.Point model, Ellipse visual, PointerReleasedEventArgs e)
+    {
+        if (_dragPoint == model) EndDrag();
+    }
+
+    private void EndDrag()
+    {
+        // No explicit release needed without capture.
+        if (_dragVisual is not null)
+        {
+            _dragVisual.Stroke = Brushes.Black;
+            _dragVisual.StrokeThickness = 1;
+        }
+        _dragPoint = null;
+        _dragVisual = null;
+        if (_capturedPointer != null)
+        {
+            _capturedPointer.Capture(null);
+            _capturedPointer = null;
+        }
+    }
+
+    private void UpdateDragPosition(Avalonia.Point pt)
+    {
+        if (_dragPoint is null || _dragVisual is null) return;
+        var newX = pt.X - _dragOffset.X;
+        var newY = pt.Y - _dragOffset.Y;
+        // Direct visual update for immediate feedback
+        Canvas.SetLeft(_dragVisual, newX - _dragVisual.Width / 2);
+        Canvas.SetTop(_dragVisual, newY - _dragVisual.Height / 2);
+        // Update model (fires PropertyChanged, harmless)
+        _dragPoint.X = newX;
+        _dragPoint.Y = newY;
     }
 }

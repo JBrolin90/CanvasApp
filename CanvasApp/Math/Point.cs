@@ -11,7 +11,9 @@ public class Point : IEquatable<Point>, INotifyPropertyChanged
 {
 	private double _x;
 	private double _y;
+	private Guid id; // Unique key for this point, used in ViewModel to track visuals.
 
+	public Guid Id => id;
 	public double X
 	{
 		get => _x;
@@ -28,12 +30,19 @@ public class Point : IEquatable<Point>, INotifyPropertyChanged
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    public Point() : this(0, 0) { }
+    public Point() : this(0, 0, Guid.NewGuid()) { }
 
+	public Point(double x, double y, Guid id)
+	{
+		_x = x;
+		_y = y;
+		this.id = id;
+	}
 	public Point(double x, double y)
 	{
 		_x = x;
 		_y = y;
+		id = Guid.NewGuid();
 	}
 
 	public double DistanceTo(Point other)

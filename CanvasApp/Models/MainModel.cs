@@ -1,3 +1,4 @@
+using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
@@ -23,8 +24,25 @@ public class MainModel : INotifyPropertyChanged
 			OnPropertyChanged();
 		}
 	}
+	
+	public Point Add(Point p)
+	{
+		Points.Add(p);
+		return p;
+	}
+	public Point Add(double x, double y, Guid key)
+	{
+		var p = new Point(x, y, key);
+		Points.Add(p);
+		return p;
+	}
+	public Point Add(double x, double y)
+	{
+		var p = new Point(x, y);
+		Points.Add(p);
+		return p;
+	}
 
-	public void Add(Point p) => Points.Add(p);
 	public void Remove(Point p) => Points.Remove(p);
 
 	public event PropertyChangedEventHandler? PropertyChanged;

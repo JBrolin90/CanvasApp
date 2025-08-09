@@ -21,6 +21,7 @@ public enum UiEventKind
 public sealed record UiEvent(UiEventKind Kind, object? Payload = null);
 
 
+
 /// <summary>
 /// ViewModel layer between view and MainModel.
 /// Exposes Points and selected point plus simple commands.
@@ -29,7 +30,7 @@ public class MainViewModel : INotifyPropertyChanged
 {
     private readonly MainModel _model;
     private readonly Dictionary<Point, Guid> _visualKeys = [];
-    private readonly Dictionary<Guid, Guid>  idMapper= [];
+    private readonly Dictionary<Guid, Guid> idMapper = [];
 
     public ObservableCollection<Sweeper.Math.Point> Points => _model.Points;
 
@@ -73,7 +74,7 @@ public class MainViewModel : INotifyPropertyChanged
                 var visualId = new Guid();
                 idMapper[modelId] = visualId;
                 idMapper[visualId] = modelId;
-                Raise(UiEventKind.PointAdded, visualId);
+                Raise(UiEventKind.PointAdded, new Point(p.X, p.Y, visualId));
             }
 
         if (e.OldItems != null)
@@ -88,9 +89,9 @@ public class MainViewModel : INotifyPropertyChanged
         _model.Add(x, y);
     }
 
-    public void MovePoint(Point point, double x, double y)
+    public void MovePoint(Guid visualId, double x, double y)
     {
-        if (point == null) return;
+        var modelId = idMapper[visualId];
         point.X = x;
         point.Y = y;
     }

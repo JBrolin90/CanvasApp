@@ -9,6 +9,7 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Interactivity;
 using Sweeper.ViewModels;
+using Avalonia;
 
 namespace avalonia.app;
 
@@ -33,6 +34,22 @@ public partial class MainWindow : Window
         {
             Background = Brushes.Transparent // Needed so empty areas receive pointer events
         };
+
+        _vm.UiEventRaised += (_, evt) =>
+        {
+            switch (evt.Kind)
+            {
+                case UiEventKind.PointAdded:
+                    var p = evt.Payload as Sweeper.Math.Point;
+                    if(p!=null)
+                        AddPointVisual(p, _canvas);
+                    break;
+                case UiEventKind.FlashPoint:
+                    // custom flash logic
+                    break;
+            }
+        };
+
 
         var title = new TextBlock
         {
@@ -125,7 +142,7 @@ public partial class MainWindow : Window
     private void AddPointVisual(Sweeper.Math.Point p, Canvas canvas)
     {
         // Get stable key from VM
-        var key = _vm.EnsureAndGetVisualKey(p);
+        var key = p.Id;
         if (_visualsByKey.ContainsKey(key)) return;
 
         var dot = new Ellipse
@@ -182,10 +199,9 @@ public partial class MainWindow : Window
     private void OnPointPressed(Sweeper.Math.Point model, Ellipse visual, PointerPressedEventArgs e)
     {
         if (!e.GetCurrentPoint(visual).Properties.IsLeftButtonPressed) return;
-        _dragPoint = model;
         _dragVisual = visual;
         var pt = e.GetPosition(_canvas);
-        _dragOffset = new Avalonia.Point(pt.X - model.X, pt.Y - model.Y);
+        _dragOffset = new Avalonia.Point(0, 0);
         visual.Stroke = Brushes.Yellow;
         visual.StrokeThickness = 2;
     // Capture pointer to the visual so it continues receiving move events.
@@ -196,14 +212,14 @@ public partial class MainWindow : Window
 
     private void OnPointMoved(Sweeper.Math.Point model, Ellipse visual, PointerEventArgs e)
     {
-        if (_dragPoint != model || _dragVisual != visual) return;
+        if (_dragVisual != visual) return;
         if (!e.GetCurrentPoint(_canvas).Properties.IsLeftButtonPressed)
         {
             EndDrag();
             return;
         }
         var pt = e.GetPosition(_canvas);
-        UpdateDragPosition(pt);
+        UpdateDragPosition(pt, visual);
     }
 
     private void OnPointReleased(Sweeper.Math.Point model, Ellipse visual, PointerReleasedEventArgs e)
@@ -228,15 +244,15 @@ public partial class MainWindow : Window
         }
     }
 
-    private void UpdateDragPosition(Avalonia.Point pt)
+    private void UpdateDragPosition(Avalonia.Point pt, Ellipse dot)
     {
-        if (_dragPoint is null || _dragVisual is null) return;
+        if (_dragVisual is null) return;
         var newX = pt.X - _dragOffset.X;
         var newY = pt.Y - _dragOffset.Y;
         // Direct visual update for immediate feedback
         Canvas.SetLeft(_dragVisual, newX - _dragVisual.Width / 2);
         Canvas.SetTop(_dragVisual, newY - _dragVisual.Height / 2);
         // Delegate model update to the ViewModel
-        _vm.MovePoint(_dragPoint, newX, newY);
+        _vm.MovePoint(dot.Tag, newX, newY);
     }
 }

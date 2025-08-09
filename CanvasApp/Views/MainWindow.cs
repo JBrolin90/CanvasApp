@@ -1,0 +1,1 @@
+// Duplicate MainWindow removed. Logic consolidated in CanvasApp/MainWindow.cs

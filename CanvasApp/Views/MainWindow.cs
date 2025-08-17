@@ -93,7 +93,7 @@ public partial class MainWindow : Window
             var props = e.GetCurrentPoint(_canvas).Properties;
             if (!props.IsLeftButtonPressed) { EndDrag(); return; }
             var pt = e.GetPosition(_canvas);
-            UpdateDragPosition(pt);
+            UpdateDragPosition(pt,_dragVisual);
         }, RoutingStrategies.Tunnel | RoutingStrategies.Bubble, true);
 
         _canvas.AddHandler(PointerReleasedEvent, (object? _, PointerReleasedEventArgs e) =>
@@ -253,6 +253,6 @@ public partial class MainWindow : Window
         Canvas.SetLeft(_dragVisual, newX - _dragVisual.Width / 2);
         Canvas.SetTop(_dragVisual, newY - _dragVisual.Height / 2);
         // Delegate model update to the ViewModel
-        _vm.MovePoint(dot.Tag, newX, newY);
+        _vm.MovePoint((System.Guid)dot.Tag, newX, newY);
     }
 }

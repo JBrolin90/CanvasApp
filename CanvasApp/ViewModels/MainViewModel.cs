@@ -92,8 +92,8 @@ public class MainViewModel : INotifyPropertyChanged
     public void MovePoint(Guid visualId, double x, double y)
     {
         var modelId = idMapper[visualId];
-        point.X = x;
-        point.Y = y;
+        // point.X = x;
+        // point.Y = y;
     }
 
     public void RemovePoint(Point point)

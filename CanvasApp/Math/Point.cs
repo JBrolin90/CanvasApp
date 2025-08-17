@@ -13,7 +13,7 @@ public class Point : IEquatable<Point>, INotifyPropertyChanged
 	private double _y;
 	private Guid id; // Unique key for this point, used in ViewModel to track visuals.
 
-	public Guid Id => id;
+	public Guid Id { set { id = value; } get { return id; }} 
 	public double X
 	{
 		get => _x;

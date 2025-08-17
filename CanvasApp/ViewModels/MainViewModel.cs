@@ -29,7 +29,6 @@ public sealed record UiEvent(UiEventKind Kind, object? Payload = null);
 public class MainViewModel : INotifyPropertyChanged
 {
     private readonly MainModel _model;
-    private readonly Dictionary<Point, Guid> _visualKeys = [];
     private readonly Dictionary<Guid, Guid> idMapper = [];
 
     public ObservableCollection<Sweeper.Math.Point> Points => _model.Points;
@@ -41,52 +40,49 @@ public class MainViewModel : INotifyPropertyChanged
     private void Raise(UiEventKind kind, object? payload = null)
         => UiEventRaised?.Invoke(this, new UiEvent(kind, payload));
 
-    public Guid EnsureAndGetVisualKey(Point p)
-    {
-        if (!_visualKeys.TryGetValue(p, out var id))
-        {
-            id = Guid.NewGuid();
-            _visualKeys[p] = id;
-        }
-        return id;
-    }
+    // public Guid EnsureAndGetVisualKey(Point p)
+    // {
+    //     if (!idMapper.TryGetValue(p, out var id))
+    //     {
+    //         id = Guid.NewGuid();
+    //         idMapper[p] = id;
+    //     }
+    //     return id;
+    // }
 
-    public bool TryGetVisualKey(Point p, out Guid key) => _visualKeys.TryGetValue(p, out key);
+    // public bool TryGetVisualKey(Point p, out Guid key) => _visualKeys.TryGetValue(p, out key);
 
     public MainViewModel() : this(new MainModel()) { }
 
     public MainViewModel(MainModel model)
     {
         _model = model;
-        // Seed visual keys for existing points (if any)
-        foreach (var p in _model.Points)
-            EnsureAndGetVisualKey(p);
-
         _model.Points.CollectionChanged += OnPointsChanged;
     }
 
     private void OnPointsChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
         if (e.NewItems != null)
-            foreach (Point p in e.NewItems)
+            foreach (Point modelPoint in e.NewItems)
             {
-                var modelId = EnsureAndGetVisualKey(p);
-                var visualId = new Guid();
+                var modelId = modelPoint.Id;
+                var visualId = Guid.NewGuid();
                 idMapper[modelId] = visualId;
                 idMapper[visualId] = modelId;
-                Raise(UiEventKind.PointAdded, new Point(p.X, p.Y, visualId));
+                var point = new Point(modelPoint.X, modelPoint.Y, visualId);
+                Raise(UiEventKind.PointAdded, point );
             }
 
         if (e.OldItems != null)
             foreach (Point p in e.OldItems)
             {
-                if (_visualKeys.Remove(p))
-                    PointRemoved?.Invoke(this, p);
+                // if (_visualKeys.Remove(p))
+                //     PointRemoved?.Invoke(this, p);
             }
     }
     public void AddNewPointFromUI(double x, double y)
     {
-        _model.Add(x, y);
+        _model.Add(x, y, Guid.NewGuid());
     }
 
     public void MovePoint(Guid visualId, double x, double y)

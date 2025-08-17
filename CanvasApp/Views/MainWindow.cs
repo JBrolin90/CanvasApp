@@ -167,26 +167,26 @@ public partial class MainWindow : Window
 
     private void RemovePointVisual(Sweeper.Math.Point p, Canvas canvas)
     {
-        if (!_vm.TryGetVisualKey(p, out var key)) return;
-        if (_visualsByKey.TryGetValue(key, out var dot))
-        {
-            canvas.Children.Remove(dot);
-            _visualsByKey.Remove(key);
-            p.PropertyChanged -= Point_PropertyChanged;
-            if (_dragPoint == p)
-                EndDrag();
-        }
+        // if (!_vm.TryGetVisualKey(p, out var key)) return;
+        // if (_visualsByKey.TryGetValue(key, out var dot))
+        // {
+        //     canvas.Children.Remove(dot);
+        //     _visualsByKey.Remove(key);
+        //     p.PropertyChanged -= Point_PropertyChanged;
+        //     if (_dragPoint == p)
+        //         EndDrag();
+        // }
     }
 
     private void Point_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
         if (sender is not Sweeper.Math.Point p) return;
-        if (!_vm.TryGetVisualKey(p, out var key)) return;
-        if (!_visualsByKey.TryGetValue(key, out var dot)) return;
+        // if (!_vm.TryGetVisualKey(p, out var key)) return;
+        // if (!_visualsByKey.TryGetValue(key, out var dot)) return;
         if (e.PropertyName is nameof(Sweeper.Math.Point.X) or nameof(Sweeper.Math.Point.Y))
         {
-            PositionDot(dot, p);
-            ToolTip.SetTip(dot, $"({p.X:0.##}, {p.Y:0.##})");
+            // PositionDot(dot, p);
+            // ToolTip.SetTip(dot, $"({p.X:0.##}, {p.Y:0.##})");
         }
     }
 

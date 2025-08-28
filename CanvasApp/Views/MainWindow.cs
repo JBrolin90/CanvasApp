@@ -78,7 +78,10 @@ public partial class MainWindow : Window
         // Pointer: click to add point if not on existing; start drag if on existing.
         _canvas.PointerPressed += (s, e) =>
         {
-            if (e.Source is Ellipse) return; // Ellipse handles its own press
+            if (e.Source is Ellipse)
+            {
+                return; // Ellipse handles its own press
+            }
             if (!e.GetCurrentPoint(_canvas).Properties.IsLeftButtonPressed) return;
             Avalonia.Point pt = e.GetPosition(_canvas);
             _vm.AddNewPointFromUI(pt.X, pt.Y);
@@ -207,7 +210,7 @@ public partial class MainWindow : Window
     // Capture pointer to the visual so it continues receiving move events.
         e.Pointer.Capture(visual);
         _capturedPointer = e.Pointer;
-        e.Handled = true;
+        // e.Handled = true;
     }
 
     private void OnPointMoved(Sweeper.Math.Point model, Ellipse visual, PointerEventArgs e)

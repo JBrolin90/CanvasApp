@@ -15,4 +15,5 @@ public class Dot : Ellipse
         StrokeThickness = 1;
         Tag = key; // store key instead of model
     }
+    //ToolTip.SetTip(dot, $"({p.X:0.##}, {p.Y:0.##})");
 }

@@ -29,6 +29,8 @@ public class Dot : Ellipse
         Canvas.SetTop(this, p.Y - Height / 2);
         ToolTip.SetTip(this, $"({p.X:0.##}, {p.Y:0.##})");
 
+        _onMoved = onMoved;
+
         PointerPressed += OnDotPressed;
     }
 

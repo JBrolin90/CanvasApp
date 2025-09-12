@@ -21,27 +21,17 @@ namespace Sweeper.Views
             _vm = viewModel;
             _canvas = new Canvas
             {
-                Width = 5000,
-                Height = 5000,
+                Width = 8000,
+                Height = 400,
                 Background = Brushes.Transparent
             };
-            // Add a marker at the far corner to force size recognition
-            var marker = new Rectangle
-            {
-                Width = 10,
-                Height = 10,
-                Fill = Brushes.Red
-            };
-            Canvas.SetLeft(marker, 4990); // Near the right edge
-            Canvas.SetTop(marker, 4990);  // Near the bottom edge
-            _canvas.Children.Add(marker);
 
             SetupEventHandlers();
             AddStatusElements();
             
             // Seed existing points
             foreach (var p in _vm.Points) 
-                AddPointVisual(p);
+                AddNewDot(p);
         }
 
         private void SetupEventHandlers()
@@ -56,7 +46,7 @@ namespace Sweeper.Views
             {
                 case UiEventKind.PointAdded:
                     if (evt.Payload is Math.Point point)
-                        AddPointVisual(point);
+                        AddNewDot(point);
                     break;
                 case UiEventKind.FlashPoint:
                     // Handle flash logic
@@ -73,17 +63,15 @@ namespace Sweeper.Views
             _vm.AddNewPointFromUI(pt.X, pt.Y);
         }
 
-        private void AddPointVisual(Math.Point p)
+        private void AddNewDot(Math.Point p)
         {
-            if (_visualsByKey.ContainsKey(p.Id)) return;
             var dot = new Dot(p, OnDotMoved);
             _canvas.Children.Add(dot);
-            _visualsByKey[p.Id] = dot;
         }
 
-        private void OnDotMoved(Guid visualId, double x, double y)
+        private void OnDotMoved(Guid id, double x, double y)
         {
-            _vm.MovePoint(visualId, x, y);
+            _vm.MovePoint(id, x, y);
         }
 
         readonly TextBlock title = new()

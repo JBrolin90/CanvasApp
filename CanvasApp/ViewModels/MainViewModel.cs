@@ -13,6 +13,7 @@ public enum UiEventKind
 {
     PointAdded,
     PointRemoved,
+    PointMoved, 
     SelectionChanged,
     FlashPoint,
     FocusPoint
@@ -29,8 +30,6 @@ public sealed record UiEvent(UiEventKind Kind, object? Payload = null);
 public class MainViewModel : INotifyPropertyChanged
 {
     private readonly MainModel _model;
-    private readonly Dictionary<Guid, Guid> idMapper = [];
-
     public ObservableCollection<Sweeper.Math.Point> Points => _model.Points;
 
     // public event EventHandler<Point>? PointRemoved; // optional notification
@@ -56,31 +55,34 @@ public class MainViewModel : INotifyPropertyChanged
         if (e.NewItems != null)
             foreach (Point modelPoint in e.NewItems)
             {
-                var modelId = modelPoint.Id;
-                var visualId = Guid.NewGuid();
-                idMapper[modelId] = visualId;
-                idMapper[visualId] = modelId;
-                var point = new Point(modelPoint.X, modelPoint.Y, visualId);
-                Raise(UiEventKind.PointAdded, point );
+                Raise(UiEventKind.PointAdded, modelPoint);
             }
 
         if (e.OldItems != null)
             foreach (Point p in e.OldItems)
             {
-                // if (_visualKeys.Remove(p))
-                //     PointRemoved?.Invoke(this, p);
+                Raise(UiEventKind.PointRemoved, p);
             }
     }
     public void AddNewPointFromUI(double x, double y)
     {
-        _model.Add(x, y, Guid.NewGuid());
+        _model.Add(x, y);
     }
 
-    public void MovePoint(Guid visualId, double x, double y)
+    public bool MovePoint(Guid id, double x, double y)
     {
-        var modelId = idMapper[visualId];
-        // point.X = x;
-        // point.Y = y;
+        if (_model.GetPoint(id) is not { } point)
+            return false;
+
+        var oldX = point.X;
+        var oldY = point.Y;
+
+        point.X = x;
+        point.Y = y;
+
+        Raise(UiEventKind.PointMoved, new { Point = point, OldX = oldX, OldY = oldY });
+
+        return true;
     }
 
     public void RemovePoint(Point point)

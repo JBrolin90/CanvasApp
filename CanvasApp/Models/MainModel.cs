@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Sweeper.Math;
@@ -11,40 +13,72 @@ namespace Sweeper.Models;
 /// </summary>
 public class MainModel : INotifyPropertyChanged
 {
-	public ObservableCollection<Point> Points { get; } = [];
+    private readonly Dictionary<Guid, Point> _pointLookup = new();
+    
+    public ObservableCollection<Point> Points { get; }
 
-	private Point? _selected;
-	public Point? Selected
-	{
-		get => _selected;
-		set
-		{
-			if (_selected == value) return;
-			_selected = value;
-			OnPropertyChanged();
-		}
-	}
-	
-	public Point Add(Point p)
-	{
-		Points.Add(p);
-		return p;
-	}
-	public Point Add(double x, double y, Guid key)
-	{
-		var p = new Point(x, y, key);
-		Points.Add(p);
-		return p;
-	}
-	public Point Add(double x, double y)
-	{
-		var p = new Point(x, y);
-		Points.Add(p);
-		return p;
-	}
+    public MainModel()
+    {
+        Points = new ObservableCollection<Point>();
+        Points.CollectionChanged += OnPointsCollectionChanged;
+    }
 
-	public void Remove(Point p) => Points.Remove(p);
+    private void OnPointsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        if (e.NewItems != null)
+        {
+            foreach (Point point in e.NewItems)
+            {
+                _pointLookup[point.Id] = point;
+            }
+        }
 
-	public event PropertyChangedEventHandler? PropertyChanged;
-	protected void OnPropertyChanged([CallerMemberName] string? name = null) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        if (e.OldItems != null)
+        {
+            foreach (Point point in e.OldItems)
+            {
+                _pointLookup.Remove(point.Id);
+            }
+        }
+    }
+
+    private Point? _selected;
+    public Point? Selected
+    {
+        get => _selected;
+        set
+        {
+            if (_selected == value) return;
+            _selected = value;
+            OnPropertyChanged();
+        }
+    }
+    
+    public Point Add(Point p)
+    {
+        Points.Add(p);
+        return p;
+    }
+    public Point Add(double x, double y, Guid id)
+    {
+        var p = new Point(x, y, id);
+        Points.Add(p);
+        return p;
+    }
+    public Point Add(double x, double y)
+    {
+        var p = new Point(x, y);
+        Points.Add(p);
+        return p;
+    }
+
+    public Point? GetPoint(Guid id)
+    {
+        return _pointLookup.TryGetValue(id, out var point) ? point : null;
+    }
+
+    public void Remove(Point p) => Points.Remove(p);
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+    protected void OnPropertyChanged([CallerMemberName] string? name = null) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 }

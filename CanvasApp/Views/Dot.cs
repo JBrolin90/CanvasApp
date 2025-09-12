@@ -1,3 +1,4 @@
+using System;
 using Avalonia.Controls;
 using Avalonia.Controls.Shapes;
 using Avalonia.Input;
@@ -13,7 +14,11 @@ public class Dot : Ellipse
     private const double DotSize = 10;
     private const double StrokeThicknessNormal = 1;
     private const double StrokeThicknessDragging = 2;
-    internal Dot(Sweeper.Math.Point p)
+
+
+    private readonly Action<Guid, double, double>? _onMoved;
+
+    internal Dot(Sweeper.Math.Point p, Action<Guid, double, double>? onMoved = null)
     {
         Height = Width = DotSize;
         Fill = Brushes.OrangeRed;
@@ -56,10 +61,20 @@ public class Dot : Ellipse
         Stroke = Brushes.Black;
         StrokeThickness = StrokeThicknessNormal;
 
+        if (Canvas != null && Tag is Guid id)
+        {
+            var centerX = Canvas.GetLeft(this) + Width / 2;
+            var centerY = Canvas.GetTop(this) + Height / 2;
+            _onMoved?.Invoke(id, centerX, centerY);
+        }
+
+
         _capturedPointer?.Capture(null);
         _capturedPointer = null;
         PointerMoved -= OnDotMoved;
         PointerReleased -= OnDotReleased;
+
+        
     }
 
 

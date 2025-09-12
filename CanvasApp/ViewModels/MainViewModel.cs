@@ -33,22 +33,13 @@ public class MainViewModel : INotifyPropertyChanged
 
     public ObservableCollection<Sweeper.Math.Point> Points => _model.Points;
 
-    public event EventHandler<Point>? PointRemoved; // optional notification
+    // public event EventHandler<Point>? PointRemoved; // optional notification
 
     public event EventHandler<UiEvent>? UiEventRaised;
 
     private void Raise(UiEventKind kind, object? payload = null)
         => UiEventRaised?.Invoke(this, new UiEvent(kind, payload));
 
-    // public Guid EnsureAndGetVisualKey(Point p)
-    // {
-    //     if (!idMapper.TryGetValue(p, out var id))
-    //     {
-    //         id = Guid.NewGuid();
-    //         idMapper[p] = id;
-    //     }
-    //     return id;
-    // }
 
     // public bool TryGetVisualKey(Point p, out Guid key) => _visualKeys.TryGetValue(p, out key);
 

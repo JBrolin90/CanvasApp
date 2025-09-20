@@ -11,9 +11,8 @@ public class Point : IEquatable<Point>, INotifyPropertyChanged
 {
 	private double _x;
 	private double _y;
-	private Guid id; // Unique key for this point, used in ViewModel to track visuals.
-
-	public Guid Id { set { id = value; } get { return id; }} 
+	private Guid id;
+	public Guid Id { get { return id; } }
 	public double X
 	{
 		get => _x;
@@ -26,18 +25,8 @@ public class Point : IEquatable<Point>, INotifyPropertyChanged
 		set => SetField(ref _y, value);
 	}
 
-	public static readonly Point Zero = new(0, 0);
+	public event PropertyChangedEventHandler? PropertyChanged;
 
-    public event PropertyChangedEventHandler? PropertyChanged;
-
-    public Point() : this(0, 0, Guid.NewGuid()) { }
-
-	public Point(double x, double y, Guid id)
-	{
-		_x = x;
-		_y = y;
-		this.id = id;
-	}
 	public Point(double x, double y)
 	{
 		_x = x;
@@ -50,18 +39,6 @@ public class Point : IEquatable<Point>, INotifyPropertyChanged
 		var dx = other.X - X;
 		var dy = other.Y - Y;
 		return global::System.Math.Sqrt(dx * dx + dy * dy);
-	}
-
-	/// <summary>Create a new point offset by (dx, dy).</summary>
-	public Point Offset(double dx, double dy) => new(X + dx, Y + dy);
-
-	/// <summary>Translate this point in-place by (dx, dy).</summary>
-	public Point Translate(double dx, double dy)
-	{
-		// Use properties to ensure notifications fire.
-		X = _x + dx;
-		Y = _y + dy;
-		return this;
 	}
 
 	public void Deconstruct(out double x, out double y)
@@ -97,4 +74,24 @@ public class Point : IEquatable<Point>, INotifyPropertyChanged
 	public static Point operator -(Point a, Point b) => new(a.X - b.X, a.Y - b.Y);
 	public static bool operator ==(Point? a, Point? b) => ReferenceEquals(a, b) || (a is not null && b is not null && a.Equals(b));
 	public static bool operator !=(Point? a, Point? b) => !(a == b);
+	
+	/// <summary>
+	/// Implicitly converts this Point to Avalonia.Point.
+	/// </summary>
+	/// <param name="point">The Sweeper.Math.Point instance.</param>
+	/// <returns>An Avalonia.Point struct with the same coordinates.</returns>
+	/// <example>
+	/// <code>
+	/// Sweeper.Math.Point p = new(1.0, 2.0);
+	/// Avalonia.Point ap = p; // Implicit conversion
+	/// </code>
+	/// </example>
+	public static implicit operator Avalonia.Point(Point point)
+	{
+		if (point is null)
+		{
+			throw new ArgumentNullException(nameof(point));
+		}
+		return new Avalonia.Point(point.X, point.Y);
+	}
 }

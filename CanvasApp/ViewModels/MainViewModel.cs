@@ -6,6 +6,7 @@ using Sweeper.Math;
 using System.Collections.Generic;
 using System;
 using System.Collections.Specialized;
+using System.Linq;
 
 namespace Sweeper.ViewModels;
 
@@ -13,7 +14,10 @@ public enum UiEventKind
 {
     PointAdded,
     PointRemoved,
-    PointMoved, 
+    PointMoved,
+    SegmentAdded,        // New: when a segment is added to the model
+    SegmentRemoved,      // New: when a segment is removed from the model
+    SegmentMoved,        // New: when a segment is moved
     SelectionChanged,
     FlashPoint,
     FocusPoint
@@ -25,12 +29,17 @@ public sealed record UiEvent(UiEventKind Kind, object? Payload = null);
 
 /// <summary>
 /// ViewModel layer between view and MainModel.
-/// Exposes Points and selected point plus simple commands.
+/// Exposes Points, Segments, and selected items plus simple commands.
 /// </summary>
 public class MainViewModel : INotifyPropertyChanged
 {
     private readonly MainModel _model;
+   
     public ObservableCollection<Sweeper.Math.Point> Points => _model.Points;
+    
+    /// <summary>
+    /// Observable collection of segment view models for UI binding.
+    /// </summary>
 
     // public event EventHandler<Point>? PointRemoved; // optional notification
 
@@ -47,6 +56,7 @@ public class MainViewModel : INotifyPropertyChanged
     public MainViewModel(MainModel model)
     {
         _model = model;
+        
         _model.Points.CollectionChanged += OnPointsChanged;
     }
 
@@ -112,6 +122,8 @@ public class MainViewModel : INotifyPropertyChanged
         Selected = null;
         OnPropertyChanged(nameof(Points));
     }
+
+
     public event PropertyChangedEventHandler? PropertyChanged;
     protected void OnPropertyChanged([CallerMemberName] string? name = null)
     {

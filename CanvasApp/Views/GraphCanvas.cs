@@ -4,7 +4,6 @@ using Avalonia.Controls;
 using Avalonia.Controls.Shapes;
 using Avalonia.Media;
 using Sweeper.ViewModels;
-using avalonia.app;
 using Avalonia;
 
 namespace Sweeper.Views
@@ -13,6 +12,7 @@ namespace Sweeper.Views
     {
         private readonly Canvas _canvas;
         private readonly Dictionary<Guid, Shape> _visualsByKey = new();
+        private readonly Dictionary<Guid, Segment> _segmentsByKey = new();
         private readonly MainViewModel _vm;
 
         public Canvas Canvas => _canvas;
@@ -34,21 +34,8 @@ namespace Sweeper.Views
             foreach (var p in _vm.Points) 
                 AddNewDot(p);
 
-            // Example: Add a sample segment (remove this in production)
-            AddExampleSegment();
         }
 
-        /// <summary>
-        /// Adds an example segment for demonstration purposes.
-        /// Remove this method in production code.
-        /// </summary>
-        private void AddExampleSegment()
-        {
-            var startPoint = new Math.Point(100, 100);
-            var endPoint = new Math.Point(200, 150);
-            var segment = new Math.Segment(startPoint, endPoint);
-            AddNewSegment(segment);
-        }
 
         private void SetupEventHandlers()
         {
@@ -74,7 +61,7 @@ namespace Sweeper.Views
         {
             if (e.Source is Shape) return;
             if (!e.GetCurrentPoint(_canvas).Properties.IsLeftButtonPressed) return;
-            
+
             var pt = e.GetPosition(_canvas);
             _vm.AddNewPointFromUI(pt.X, pt.Y);
         }
@@ -85,28 +72,9 @@ namespace Sweeper.Views
             _canvas.Children.Add(dot);
         }
 
-        /// <summary>
-        /// Adds a new segment to the canvas with its endpoint dots.
-        /// </summary>
-        /// <param name="segment">The mathematical segment to visualize</param>
-        private void AddNewSegment(Math.Segment segment)
-        {
-            var visualSegment = new Segment(segment, this, OnSegmentMoved);
-            visualSegment.AddToCanvas(_canvas);
-        }
-
         private void OnDotMoved(Guid id, double x, double y)
         {
             _vm.MovePoint(id, x, y);
-        }
-
-        /// <summary>
-        /// Callback invoked when a segment is moved.
-        /// </summary>
-        private void OnSegmentMoved(Guid id, double x, double y)
-        {
-            // Handle segment movement - this could update the model if needed
-            // For now, we'll just let the visual update handle it
         }
 
         readonly TextBlock title = new()

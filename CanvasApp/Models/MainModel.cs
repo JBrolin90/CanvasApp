@@ -59,12 +59,6 @@ public class MainModel : INotifyPropertyChanged
         Points.Add(p);
         return p;
     }
-    public Point Add(double x, double y, Guid id)
-    {
-        var p = new Point(x, y, id);
-        Points.Add(p);
-        return p;
-    }
     public Point Add(double x, double y)
     {
         var p = new Point(x, y);

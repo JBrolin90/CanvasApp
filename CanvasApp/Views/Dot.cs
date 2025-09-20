@@ -16,19 +16,11 @@ public class Dot : Ellipse, IGroupMovable
     private const double DotSize = 10;
     private const double StrokeThicknessNormal = 1;
     private const double StrokeThicknessDragging = 2;
-
-    internal Guid Id
-    {
-        get
-        {
-            return (Guid)Tag;
-        }
-    }
+    private Canvas? Canvas => Parent as Canvas;
+    internal Guid Id => (Guid)Tag;
 
 
-    private readonly Action<Guid, double, double>? _onMoved;
-
-    internal Dot(Sweeper.Math.Point p, IGroupMover mover, Action<Guid, double, double>? onMoved = null)
+    internal Dot(Sweeper.Math.Point p, IGroupMover mover)
     {
         Height = Width = DotSize;
         Fill = Brushes.OrangeRed;
@@ -39,14 +31,9 @@ public class Dot : Ellipse, IGroupMovable
         Canvas.SetTop(this, p.Y - Height / 2);
         ToolTip.SetTip(this, $"({p.X:0.##}, {p.Y:0.##})");
 
-        _onMoved = onMoved;
         this.mover = mover;
-        
-
         PointerPressed += OnDotPressed;
     }
-
-    private Canvas? Canvas => Parent as Canvas;
 
     Guid IGroupMovable.Id => Id;
 
@@ -78,9 +65,6 @@ public class Dot : Ellipse, IGroupMovable
         
         var finalPosition = e.GetPosition(Canvas);
         mover.CompleteMoveGroup(Id, finalPosition);
-
-        // Call the onMoved callback if provided (e.g., for segment endpoint updates)
-        _onMoved?.Invoke(Id, finalPosition.X, finalPosition.Y);
 
         _capturedPointer?.Capture(null);
         _capturedPointer = null;

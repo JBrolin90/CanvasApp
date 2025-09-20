@@ -5,10 +5,11 @@ using Avalonia.Controls.Shapes;
 using Avalonia.Media;
 using Sweeper.ViewModels;
 using avalonia.app;
+using Avalonia;
 
 namespace Sweeper.Views
 {
-    public class GraphCanvas
+    public class GraphCanvas: IGroupMover
     {
         private readonly Canvas _canvas;
         private readonly Dictionary<Guid, Shape> _visualsByKey = new();
@@ -65,7 +66,7 @@ namespace Sweeper.Views
 
         private void AddNewDot(Math.Point p)
         {
-            var dot = new Dot(p, OnDotMoved);
+            var dot = new Dot(p, this);
             _canvas.Children.Add(dot);
         }
 
@@ -118,6 +119,37 @@ namespace Sweeper.Views
         {
             window.Opened += (_, _) => { CenterText(_canvas, title); PositionInfo(_canvas, info, title); };
             window.SizeChanged += (_, _) => { CenterText(_canvas, title); PositionInfo(_canvas, info, title); };
+        }
+        List<IGroupMovable>? groupMovables = [];
+
+        void IGroupMover.PrepareMove(Guid guid)
+        {
+            // Create a list of Canvas children where the Tag equals guid
+            groupMovables = new List<IGroupMovable>();
+            foreach (var child in _canvas.Children)
+            {
+                var shape = child as IGroupMovable;
+                if (shape is not null)
+                {
+                    if (shape.Id == guid)
+                    {
+                        groupMovables.Add(shape);
+                    }
+                }
+            }
+        }
+
+        void IGroupMover.MoveGroup(Guid guid, Point point)
+        {
+            foreach (var movable in groupMovables!)
+            {
+                movable.MoveMe(point);
+            }
+        }
+
+        void IGroupMover.CompleteMoveGroup(Guid guid, Point point)
+        {
+            OnDotMoved(guid, point.X, point.Y);
         }
     }
 }

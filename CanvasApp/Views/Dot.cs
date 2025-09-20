@@ -1,4 +1,5 @@
 using System;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Shapes;
 using Avalonia.Input;
@@ -6,19 +7,28 @@ using Avalonia.Media;
 
 namespace Sweeper.Views;
 
-public class Dot : Ellipse
+public class Dot : Ellipse, IGroupMovable
 {
     private IPointer? _capturedPointer;
+    private IGroupMover mover;
 
 
     private const double DotSize = 10;
     private const double StrokeThicknessNormal = 1;
     private const double StrokeThicknessDragging = 2;
 
+    internal Guid Id
+    {
+        get
+        {
+            return (Guid)Tag;
+        }
+    }
+
 
     private readonly Action<Guid, double, double>? _onMoved;
 
-    internal Dot(Sweeper.Math.Point p, Action<Guid, double, double>? onMoved = null)
+    internal Dot(Sweeper.Math.Point p, IGroupMover mover, Action<Guid, double, double>? onMoved = null)
     {
         Height = Width = DotSize;
         Fill = Brushes.OrangeRed;
@@ -30,12 +40,15 @@ public class Dot : Ellipse
         ToolTip.SetTip(this, $"({p.X:0.##}, {p.Y:0.##})");
 
         _onMoved = onMoved;
+        this.mover = mover;
+        
 
         PointerPressed += OnDotPressed;
     }
 
     private Canvas? Canvas => Parent as Canvas;
 
+    Guid IGroupMovable.Id => Id;
 
     private void OnDotPressed(object? sender, PointerPressedEventArgs e)
     {
@@ -48,36 +61,46 @@ public class Dot : Ellipse
 
         PointerMoved += OnDotMoved;
         PointerReleased += OnDotReleased;
+        mover.PrepareMove(Id);
     }
 
     private void OnDotMoved(object? sender, PointerEventArgs e)
     {
         if (Canvas == null) return;
         var pt = e.GetPosition(Canvas);
-        Canvas.SetLeft(this, pt.X - Width / 2);
-        Canvas.SetTop(this, pt.Y - Height / 2);
+        mover.MoveGroup(Id, pt);
     }
 
     private void OnDotReleased(object? sender, PointerEventArgs e)
     {
         Stroke = Brushes.Black;
         StrokeThickness = StrokeThicknessNormal;
-
-        if (Canvas != null && Tag is Guid id)
-        {
-            var centerX = Canvas.GetLeft(this) + Width / 2;
-            var centerY = Canvas.GetTop(this) + Height / 2;
-            _onMoved?.Invoke(id, centerX, centerY);
-        }
-
+        mover.CompleteMoveGroup(Id, e.GetPosition(Canvas));
 
         _capturedPointer?.Capture(null);
         _capturedPointer = null;
         PointerMoved -= OnDotMoved;
         PointerReleased -= OnDotReleased;
-
-        
     }
 
+    private IGroupMovable GetMover(Guid _)
+    {
+        return this;
+    }
 
+    void MoveMe(Point point)
+    {
+        Canvas.SetLeft(this, point.X - Width / 2);
+        Canvas.SetTop(this, point.Y - Height / 2);
+    }
+
+    IGroupMovable IGroupMovable.GetMover(Guid guid)
+    {
+        return GetMover(guid);
+    }
+
+    void IGroupMovable.MoveMe(Point point)
+    {
+        MoveMe(point);
+    }
 }

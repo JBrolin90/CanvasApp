@@ -75,7 +75,12 @@ public class Dot : Ellipse, IGroupMovable
     {
         Stroke = Brushes.Black;
         StrokeThickness = StrokeThicknessNormal;
-        mover.CompleteMoveGroup(Id, e.GetPosition(Canvas));
+        
+        var finalPosition = e.GetPosition(Canvas);
+        mover.CompleteMoveGroup(Id, finalPosition);
+
+        // Call the onMoved callback if provided (e.g., for segment endpoint updates)
+        _onMoved?.Invoke(Id, finalPosition.X, finalPosition.Y);
 
         _capturedPointer?.Capture(null);
         _capturedPointer = null;

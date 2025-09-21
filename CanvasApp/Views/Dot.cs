@@ -7,7 +7,7 @@ using Avalonia.Media;
 
 namespace Sweeper.Views;
 
-public class Dot : Ellipse, IGroupMovable
+internal class Dot : Ellipse, IGroupMovable
 {
     private IPointer? _capturedPointer;
     private IGroupMover mover;
@@ -72,7 +72,7 @@ public class Dot : Ellipse, IGroupMovable
         PointerReleased -= OnDotReleased;
     }
 
-    private IGroupMovable GetMover(Guid _)
+    internal IGroupMovable GetMover(Guid _)
     {
         return this;
     }

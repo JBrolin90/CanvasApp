@@ -48,8 +48,9 @@ namespace Sweeper.Views
                     if (evt.Payload is Math.Point point)
                         AddNewDot(point);
                     break;
-                case UiEventKind.FlashPoint:
-                    // Handle flash logic
+                case UiEventKind.DotAdded:
+                    if (evt.Payload is Models.Dot dot)
+                        AddNewDot(dot);
                     break;
             }
         }
@@ -67,6 +68,11 @@ namespace Sweeper.Views
         {
             var dot = new Dot(p, this);
             canvas.Children.Add(dot);
+        }
+        private void AddNewDot(Models.Dot dot)
+        {
+            var uiDot = new Dot(dot, this);
+            canvas.Children.Add(uiDot);
         }
 
         private void OnDotMoved(Guid id, double x, double y)

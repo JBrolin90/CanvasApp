@@ -10,6 +10,9 @@ public enum UiEventKind
     PointAdded,
     PointRemoved,
     PointMoved,
+    DotRemoved,
+    DotAdded,
+    DotMoved,
     SegmentAdded,        // New: when a segment is added to the model
     SegmentRemoved,      // New: when a segment is removed from the model
     SegmentMoved,        // New: when a segment is moved
@@ -34,7 +37,9 @@ public partial class MainViewModel
     public MainViewModel(MainModel model)
     {
         _model = model;
-        _model.Points.CollectionChanged += OnPointsChanged;
+//        _model.Points.CollectionChanged += OnPointsChanged;
+        _model.SubscribeDotsChanged(OnDotsChanged);
+
     }
     #endregion
     #region IMPLEMENTATION
@@ -43,6 +48,13 @@ public partial class MainViewModel
     private void Raise(UiEventKind kind, object? payload = null)
         => UiEventRaised?.Invoke(this, new UiEvent(kind, payload));
 
+    private void OnDotsChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        if (e.NewItems != null)
+            foreach (Models.Dot dot in e.NewItems) Raise(UiEventKind.DotAdded, dot);
+        if (e.OldItems != null)
+            foreach (Dot dot in e.OldItems) Raise(UiEventKind.DotRemoved, dot);
+    }
     private void OnPointsChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
         if (e.NewItems != null)

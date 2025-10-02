@@ -10,8 +10,8 @@ public class Dot: INotifyPropertyChanged
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    Guid Id => midpoint.Id;
-    double X
+    public Guid Id => midpoint.Id;
+    public double X
     {
         get => midpoint.X;
         set
@@ -24,7 +24,7 @@ public class Dot: INotifyPropertyChanged
         }
     }
 
-    double Y
+    public double Y
     {
         get => midpoint.Y;
         set

@@ -5,6 +5,7 @@ using Avalonia.Controls.Shapes;
 using Avalonia.Input;
 using Avalonia.Media;
 
+
 namespace Sweeper.Views;
 
 internal class Dot : Ellipse, IGroupMovable
@@ -30,6 +31,20 @@ internal class Dot : Ellipse, IGroupMovable
         Canvas.SetLeft(this, p.X - Width / 2);
         Canvas.SetTop(this, p.Y - Height / 2);
         ToolTip.SetTip(this, $"({p.X:0.##}, {p.Y:0.##})");
+
+        this.mover = mover;
+        PointerPressed += OnDotPressed;
+    }
+    internal Dot(Models.Dot modelDot, IGroupMover mover)
+    {
+        Height = Width = DotSize;
+        Fill = Brushes.OrangeRed;
+        Stroke = Brushes.Black;
+        StrokeThickness = StrokeThicknessNormal;
+        Tag = modelDot.Id;
+        Canvas.SetLeft(this, modelDot.X - Width / 2);
+        Canvas.SetTop(this, modelDot.Y - Height / 2);
+        ToolTip.SetTip(this, $"({modelDot.X:0.##}, {modelDot.Y:0.##})");
 
         this.mover = mover;
         PointerPressed += OnDotPressed;

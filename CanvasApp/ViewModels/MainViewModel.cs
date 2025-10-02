@@ -39,7 +39,7 @@ public partial class MainViewModel
     #endregion
     #region IMPLEMENTATION
     private readonly MainModel _model;
-
+    #region EVENTS
     private void Raise(UiEventKind kind, object? payload = null)
         => UiEventRaised?.Invoke(this, new UiEvent(kind, payload));
 
@@ -50,6 +50,8 @@ public partial class MainViewModel
         if (e.OldItems != null)
             foreach (Point p in e.OldItems) Raise(UiEventKind.PointRemoved, p);
     }
+    #endregion
+    #region COMMANDS
     public partial Math.Point AddNewPointFromUI(double x, double y)
     => _model.GetPoint(x, y);
     public partial bool MovePoint(Guid id, double x, double y)
@@ -64,5 +66,6 @@ public partial class MainViewModel
         else
             return false;
     }
+    #endregion
     #endregion
 }

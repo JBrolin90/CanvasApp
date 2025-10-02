@@ -6,7 +6,7 @@ namespace avalonia.app;
 
 public partial class MainWindow : Window
 {
-    private readonly MainViewModel _vm;
+    private readonly MainViewModel vm;
     private readonly GraphCanvas _graphCanvas;
 
     public MainWindow()
@@ -15,14 +15,11 @@ public partial class MainWindow : Window
         Width = 400;  // Force small window
         Height = 300;
 
-        _vm = new MainViewModel();
-        DataContext = _vm;
+        vm = new MainViewModel();
+        DataContext = vm;
 
-        _graphCanvas = new GraphCanvas(_vm);
+        _graphCanvas = new GraphCanvas(this, vm);
         Content = _graphCanvas.Canvas;
-
-        _graphCanvas.UpdateLayout(this);
-
     }
 
 

@@ -11,6 +11,7 @@ public class Point : IEquatable<Point>, INotifyPropertyChanged
 {
 	private double _x;
 	private double _y;
+	private const double epsilon = 0.000001;
 	private Guid id;
 	public Guid Id { get { return id; } }
 	public double X
@@ -34,17 +35,23 @@ public class Point : IEquatable<Point>, INotifyPropertyChanged
 		id = Guid.NewGuid();
 	}
 
-	public double DistanceTo(Point other)
+	public Point? CloseEnough(double x, double y)
 	{
-		var dx = other.X - X;
-		var dy = other.Y - Y;
-		return global::System.Math.Sqrt(dx * dx + dy * dy);
+		if (DistanceTo(x, y) < epsilon)
+		{
+			return this;
+		}
+		return null;
 	}
 
-	public void Deconstruct(out double x, out double y)
+	public double DistanceTo(double x, double y)
 	{
-		x = X; y = Y;
+		var dx = x - X;
+		var dy = y - Y;
+		return global::System.Math.Sqrt(dx * dx + dy * dy);
 	}
+	public double DistanceTo(Point other) => DistanceTo(other.X, other.Y);
+	
 
 	public override string ToString() => $"({X:0.###}, {Y:0.###})";
 

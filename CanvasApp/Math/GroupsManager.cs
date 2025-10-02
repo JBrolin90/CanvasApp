@@ -3,32 +3,19 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
-using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Security.Cryptography.X509Certificates;
-using Sweeper.Math;
 
-namespace Sweeper.Models;
+namespace Sweeper.Math;
 
-/// <summary>
-/// Main view model holding a collection of points.
-/// </summary>
-public class MainModel : INotifyPropertyChanged
+public class GroupsManager
 {
-    private GroupsManager poinstMgr = new();
-    private ItemManager<Dot> dotsMgr = new();
     private readonly Dictionary<Guid, Point> _pointLookup = new();
-    
-    public ObservableCollection<Point> Points { get; }
+    private ObservableCollection<Point> groups = [];
 
-    public MainModel()
+    public GroupsManager()
     {
-        Points = new ObservableCollection<Point>();
-        Points.CollectionChanged += OnPointsCollectionChanged;
-        dotsMgr.Subscribe(OnDotsCollectionChanged);
+        groups.CollectionChanged += OnPointsCollectionChanged;
     }
-    private void OnDotsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
-    { }
 
     private void OnPointsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
@@ -49,22 +36,11 @@ public class MainModel : INotifyPropertyChanged
         }
     }
 
-    private Point? _selected;
-    public Point? Selected
-    {
-        get => _selected;
-        set
-        {
-            if (_selected == value) return;
-            _selected = value;
-            OnPropertyChanged();
-        }
-    }
-    
+
     private Point Add(double x, double y)
     {
         var p = new Point(x, y);
-        Points.Add(p);
+        groups.Add(p);
         return p;
     }
 
@@ -75,22 +51,23 @@ public class MainModel : INotifyPropertyChanged
 
     private Point? Find(double x, double y)
     {
-        foreach (var point in Points)
+        foreach (var point in groups)
         {
             return point.CloseEnough(x, y);
         }
         return null;
     }
 
-    public Point GetPoint(double x, double y)
+    public Point GetGroup(double x, double y)
     {
         Point? p = Find(x, y);
         p ??= Add(x, y);
         return p;
     }
 
-    public void Remove(Point p) => Points.Remove(p);
+    public void Remove(Point p) => groups.Remove(p);
 
     public event PropertyChangedEventHandler? PropertyChanged;
     protected void OnPropertyChanged([CallerMemberName] string? name = null) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+
 }

@@ -17,7 +17,7 @@ internal class Dot : Ellipse, IGroupMovable
     private const double StrokeThicknessNormal = 1;
     private const double StrokeThicknessDragging = 2;
     private Canvas? Canvas => Parent as Canvas;
-    internal Guid Id => (Guid)Tag;
+    internal Guid Id => Tag is null ? throw new NullReferenceException("Tag cannot be null") : (Guid)Tag;
 
 
     internal Dot(Sweeper.Math.Point p, IGroupMover mover)

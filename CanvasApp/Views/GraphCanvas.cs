@@ -29,11 +29,6 @@ namespace Sweeper.Views
 
             SetupEventHandlers();
             AddStatusElements();
-            
-            // Seed existing points
-            foreach (var p in _vm.Points) 
-                AddNewDot(p);
-
         }
 
 
@@ -91,9 +86,9 @@ namespace Sweeper.Views
         };
         private void AddStatusElements()
         {
-            void updateInfo() => info.Text = $"Points: {_vm.Points.Count}";
-            updateInfo();
-            _vm.Points.CollectionChanged += (_, _) => updateInfo();
+            // void updateInfo() => info.Text = $"Points: {_vm.Points.Count}";
+            // updateInfo();
+            // _vm.Points.CollectionChanged += (_, _) => updateInfo();
 
             // Center and keep centered both blocks.
             _canvas.Children.Add(title);
